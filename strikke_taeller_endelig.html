@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strikke Tæller</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            max-width: 400px;
+            margin: auto;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        input, button {
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 8px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .counter {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Strikke Række- og Masketæller</h1>
+    
+    <label for="rowInput">Antal rækker:</label>
+    <input type="number" id="rowInput" placeholder="Antal rækker" min="1">
+
+    <label for="stitchInput">Antal masker pr. række:</label>
+    <input type="number" id="stitchInput" placeholder="Antal masker" min="1">
+
+    <button onclick="addRow()">Tilføj række</button>
+
+    <div id="patternList" class="counter"></div>
+    
+    <button onclick="goBackRow()">Række Tilbage</button>
+    <button onclick="resetProgress()">Reset</button>
+
+    <script>
+        let pattern = JSON.parse(localStorage.getItem('pattern')) || [];
+        let currentRow = localStorage.getItem('currentRow') ? parseInt(localStorage.getItem('currentRow')) : 0;
+        let currentStitchCount = localStorage.getItem('currentStitchCount') ? parseInt(localStorage.getItem('currentStitchCount')) : 0;
+
+        function addRow() {
+            const rows = document.getElementById('rowInput').value;
+            const stitches = document.getElementById('stitchInput').value;
+
+            if (rows && stitches) {
+                pattern.push({ rows: parseInt(rows), stitches: parseInt(stitches) });
+                localStorage.setItem('pattern', JSON.stringify(pattern));
+                document.getElementById('rowInput').value = '';
+                document.getElementById('stitchInput').value = '';
+                displayPattern();
+            } else {
+                alert("Udfyld både antal rækker og masker.");
+            }
+        }
+
+        function displayPattern() {
+            let patternList = '<h2>Strikkemønster</h2><ul>';
+            pattern.forEach((item, index) => {
+                patternList += `<li>Strik ${item.rows} rækker af ${item.stitches} masker</li>`;
+            });
+            patternList += '</ul><button onclick="completeRow()">Færdiggjort en række</button>';
+            document.getElementById('patternList').innerHTML = patternList;
+            updateCounter();
+        }
+
+        function completeRow() {
+            if (currentRow < pattern.length) {
+                currentStitchCount++;
+                if (currentStitchCount >= pattern[currentRow].rows) {
+                    currentStitchCount = 0;
+                    currentRow++;
+                }
+                localStorage.setItem('currentRow', currentRow);
+                localStorage.setItem('currentStitchCount', currentStitchCount);
+                updateCounter();
+            } else {
+                alert("Du har færdiggjort alle rækker!");
+            }
+        }
+
+        function goBackRow() {
+            if (currentStitchCount > 0) {
+                currentStitchCount--;
+            } else if (currentRow > 0) {
+                currentRow--;
+                currentStitchCount = pattern[currentRow].rows - 1;
+            }
+            localStorage.setItem('currentRow', currentRow);
+            localStorage.setItem('currentStitchCount', currentStitchCount);
+            updateCounter();
+        }
+
+        function resetProgress() {
+            pattern = [];
+            currentRow = 0;
+            currentStitchCount = 0;
+            localStorage.clear();
+            displayPattern();
+        }
+
+        function updateCounter() {
+            let counterDisplay = `<h3>Aktuel fremgang</h3>`;
+            if (currentRow < pattern.length) {
+                counterDisplay += `Færdiggjort ${currentStitchCount + 1} ud af ${pattern[currentRow].rows} rækker med ${pattern[currentRow].stitches} masker.`;
+            } else {
+                counterDisplay += "Strikkemønster færdiggjort!";
+            }
+            document.getElementById('patternList').innerHTML += `<div>${counterDisplay}</div>`;
+        }
+
+        // Display pattern on page load
+        if (pattern.length > 0) {
+            displayPattern();
+        }
+    </script>
+</body>
+</html>
